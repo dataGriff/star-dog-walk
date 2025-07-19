@@ -1,0 +1,1137 @@
+openapi: 3.0.3
+info:
+  title: Star Dog Walk API
+  description: |
+    API for the Star Dog Walk application - a platform connecting dog owners with professional dog walkers.
+    
+    ## Authentication
+    Most endpoints require JWT authentication. Include the token in the Authorization header:
+    ```
+    Authorization: Bearer <your-jwt-token>
+    ```
+    
+    ## Test Accounts
+    - **Owner**: `owner@example.com` / `password`
+    - **Walker**: `walker@stardogwalker.com` / `password`
+    - **Owner 2**: `emma@example.com` / `password`
+    
+  version: 1.0.0
+  contact:
+    name: Star Dog Walk API Support
+    email: support@stardogwalker.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3001/api
+    description: Development server
+  - url: http://localhost:3000/api
+    description: Production server (via Docker)
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Authentication
+    description: User authentication and registration
+  - name: Users
+    description: User profile management
+  - name: Dogs
+    description: Dog profile management
+  - name: Walks
+    description: Walk booking and management
+  - name: Notifications
+    description: User notifications
+  - name: Health
+    description: API health checks
+
+paths:
+  # Health Check
+  /health:
+    get:
+      tags:
+        - Health
+      summary: API health check
+      description: Returns the health status of the API
+      security: []
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: OK
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  # Authentication Endpoints
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Create a new user account (owner or walker)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate user and return JWT token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Missing email or password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/verify:
+    get:
+      tags:
+        - Authentication
+      summary: Verify JWT token
+      description: Verify if the provided JWT token is valid
+      responses:
+        '200':
+          description: Token is valid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # User Endpoints
+  /users/profile:
+    get:
+      tags:
+        - Users
+      summary: Get user profile
+      description: Get the authenticated user's profile
+      responses:
+        '200':
+          description: User profile retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags:
+        - Users
+      summary: Update user profile
+      description: Update the authenticated user's profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Dog Endpoints
+  /dogs:
+    get:
+      tags:
+        - Dogs
+      summary: Get dogs
+      description: |
+        Get dogs based on user role:
+        - Owners: Get their own dogs
+        - Walkers: Get all dogs they can walk
+      responses:
+        '200':
+          description: Dogs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Dog'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags:
+        - Dogs
+      summary: Create a new dog
+      description: Create a new dog profile (owners only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDogRequest'
+      responses:
+        '201':
+          description: Dog created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dog'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Only owners can create dogs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /dogs/{dogId}:
+    get:
+      tags:
+        - Dogs
+      summary: Get dog by ID
+      description: Get a specific dog's details
+      parameters:
+        - name: dogId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Dog ID
+      responses:
+        '200':
+          description: Dog retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dog'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Dog not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags:
+        - Dogs
+      summary: Update dog
+      description: Update a dog's profile (owners only, for their own dogs)
+      parameters:
+        - name: dogId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Dog ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDogRequest'
+      responses:
+        '200':
+          description: Dog updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dog'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Dog not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - Dogs
+      summary: Delete dog
+      description: Delete a dog profile (owners only, for their own dogs)
+      parameters:
+        - name: dogId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Dog ID
+      responses:
+        '200':
+          description: Dog deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Dog deleted successfully
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Dog not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Walk Endpoints
+  /walks:
+    get:
+      tags:
+        - Walks
+      summary: Get walks
+      description: |
+        Get walks based on user role:
+        - Owners: Get walks for their dogs
+        - Walkers: Get walks assigned to them
+      responses:
+        '200':
+          description: Walks retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Walk'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags:
+        - Walks
+      summary: Create a new walk
+      description: Book a new walk (owners) or create a walk entry (walkers)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWalkRequest'
+      responses:
+        '201':
+          description: Walk created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Walk'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /walks/{walkId}:
+    get:
+      tags:
+        - Walks
+      summary: Get walk by ID
+      description: Get details of a specific walk
+      parameters:
+        - name: walkId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Walk ID
+      responses:
+        '200':
+          description: Walk retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Walk'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Walk not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags:
+        - Walks
+      summary: Update walk
+      description: Update walk details (status, notes, photos, etc.)
+      parameters:
+        - name: walkId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Walk ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWalkRequest'
+      responses:
+        '200':
+          description: Walk updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Walk'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Walk not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - Walks
+      summary: Delete walk
+      description: Cancel/delete a walk
+      parameters:
+        - name: walkId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Walk ID
+      responses:
+        '200':
+          description: Walk deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Walk deleted successfully
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Walk not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /walks/public/{walkId}:
+    get:
+      tags:
+        - Walks
+      summary: Get public walk details
+      description: Get walk details without authentication (for public sharing)
+      security: []
+      parameters:
+        - name: walkId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Walk ID
+      responses:
+        '200':
+          description: Public walk details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicWalk'
+        '404':
+          description: Walk not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Notification Endpoints
+  /notifications:
+    get:
+      tags:
+        - Notifications
+      summary: Get user notifications
+      description: Get all notifications for the authenticated user
+      responses:
+        '200':
+          description: Notifications retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags:
+        - Notifications
+      summary: Create notification
+      description: Create a new notification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNotificationRequest'
+      responses:
+        '201':
+          description: Notification created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - Notifications
+      summary: Clear all notifications
+      description: Mark all notifications as read or delete them
+      responses:
+        '200':
+          description: Notifications cleared successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: All notifications cleared
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # Request/Response Schemas
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - name
+        - role
+      properties:
+        email:
+          type: string
+          format: email
+          example: owner@example.com
+        password:
+          type: string
+          minLength: 6
+          example: password123
+        name:
+          type: string
+          example: John Doe
+        role:
+          type: string
+          enum: [owner, walker]
+          example: owner
+        phone:
+          type: string
+          example: '+44 7123 456789'
+        address:
+          type: string
+          example: '123 Main St, Cardiff CF1 1AA'
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: owner@example.com
+        password:
+          type: string
+          example: password123
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        user:
+          $ref: '#/components/schemas/User'
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: John Doe
+        phone:
+          type: string
+          example: '+44 7123 456789'
+        address:
+          type: string
+          example: '123 Main St, Cardiff CF1 1AA'
+
+    CreateDogRequest:
+      type: object
+      required:
+        - name
+        - breed
+        - age
+      properties:
+        name:
+          type: string
+          example: Max
+        breed:
+          type: string
+          example: Golden Retriever
+        age:
+          type: integer
+          minimum: 0
+          example: 3
+        weight:
+          type: number
+          minimum: 0
+          example: 25.5
+        color:
+          type: string
+          example: Golden
+        microchipNumber:
+          type: string
+          example: GB123456789
+        vetName:
+          type: string
+          example: Cardiff Veterinary Centre
+        vetPhone:
+          type: string
+          example: '+44 29 2012 3456'
+        medications:
+          type: string
+          example: None
+        allergies:
+          type: string
+          example: None known
+        behaviorNotes:
+          type: string
+          example: Friendly with other dogs, afraid of bicycles
+        emergencyContact:
+          type: string
+          example: 'John Doe - +44 7123 456789'
+        feedingInstructions:
+          type: string
+          example: Fed twice daily, no treats during walks
+        photo:
+          type: string
+          format: uri
+          example: https://example.com/dog-photo.jpg
+
+    UpdateDogRequest:
+      allOf:
+        - $ref: '#/components/schemas/CreateDogRequest'
+
+    CreateWalkRequest:
+      type: object
+      required:
+        - dogId
+        - date
+        - startTime
+        - duration
+      properties:
+        dogId:
+          type: string
+          example: '1'
+        date:
+          type: string
+          format: date
+          example: '2024-01-15'
+        startTime:
+          type: string
+          pattern: '^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$'
+          example: '14:00'
+        endTime:
+          type: string
+          pattern: '^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$'
+          example: '15:00'
+        duration:
+          type: integer
+          minimum: 15
+          example: 60
+        pickupAddress:
+          type: string
+          example: 'Splott Road, Cardiff CF24 2AA'
+        specialNotes:
+          type: string
+          example: 'Afraid of bicycles, loves puddles'
+
+    UpdateWalkRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, confirmed, completed, cancelled]
+          example: completed
+        route:
+          type: string
+          example: Splott Park Loop
+        weather:
+          type: string
+          example: sunny
+        notes:
+          type: string
+          example: Great walk! Dog was very well behaved.
+        behaviorNotes:
+          type: string
+          example: Friendly with other dogs, good recall
+        photos:
+          type: array
+          items:
+            type: string
+            format: uri
+          example: 
+            - https://example.com/photo1.jpg
+            - https://example.com/photo2.jpg
+        endTime:
+          type: string
+          pattern: '^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$'
+          example: '15:00'
+
+    CreateNotificationRequest:
+      type: object
+      required:
+        - userId
+        - type
+        - title
+        - message
+      properties:
+        userId:
+          type: string
+          example: '1'
+        type:
+          type: string
+          enum: [info, success, warning, error]
+          example: success
+        title:
+          type: string
+          example: Walk Completed
+        message:
+          type: string
+          example: Your dog's walk has been completed successfully!
+
+    # Entity Schemas
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: '1'
+        email:
+          type: string
+          format: email
+          example: owner@example.com
+        name:
+          type: string
+          example: Sophie Williams
+        role:
+          type: string
+          enum: [owner, walker]
+          example: owner
+        phone:
+          type: string
+          example: '+44 7123 456789'
+        address:
+          type: string
+          example: 'Adamsdown, Cardiff'
+        createdAt:
+          type: string
+          format: date-time
+          example: '2024-01-01T00:00:00Z'
+
+    Dog:
+      type: object
+      properties:
+        id:
+          type: string
+          example: '1'
+        name:
+          type: string
+          example: Max
+        breed:
+          type: string
+          example: Golden Retriever
+        age:
+          type: integer
+          example: 3
+        weight:
+          type: number
+          example: 25
+        color:
+          type: string
+          example: Golden
+        microchipNumber:
+          type: string
+          example: GB123456789
+        vetName:
+          type: string
+          example: Cardiff Veterinary Centre
+        vetPhone:
+          type: string
+          example: '+44 29 2012 3456'
+        medications:
+          type: string
+          example: None
+        allergies:
+          type: string
+          example: None known
+        behaviorNotes:
+          type: string
+          example: Friendly with other dogs, afraid of bicycles, loves puddles and playing fetch.
+        emergencyContact:
+          type: string
+          example: 'Sophie Williams - +44 7123 456789'
+        feedingInstructions:
+          type: string
+          example: Fed twice daily, no treats during walks
+        photo:
+          type: string
+          format: uri
+          example: https://images.pexels.com/photos/1108099/pexels-photo-1108099.jpeg
+        ownerId:
+          type: string
+          example: '1'
+        createdAt:
+          type: string
+          format: date-time
+          example: '2024-01-01T00:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2024-01-01T00:00:00Z'
+
+    Walk:
+      type: object
+      properties:
+        id:
+          type: string
+          example: '1'
+        dogId:
+          type: string
+          example: '1'
+        walkerId:
+          type: string
+          example: '2'
+        ownerId:
+          type: string
+          example: '1'
+        date:
+          type: string
+          format: date
+          example: '2024-01-12'
+        startTime:
+          type: string
+          pattern: '^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$'
+          example: '14:00'
+        endTime:
+          type: string
+          pattern: '^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$'
+          example: '15:00'
+        duration:
+          type: integer
+          example: 60
+        status:
+          type: string
+          enum: [pending, confirmed, completed, cancelled]
+          example: completed
+        route:
+          type: string
+          example: Splott Park Loop
+        weather:
+          type: string
+          example: sunny
+        notes:
+          type: string
+          example: Max had a wonderful time today! Great walk through the park.
+        behaviorNotes:
+          type: string
+          example: Very well behaved, friendly with other dogs, good recall
+        photos:
+          type: array
+          items:
+            type: string
+            format: uri
+          example:
+            - https://images.pexels.com/photos/1108099/pexels-photo-1108099.jpeg
+            - https://images.pexels.com/photos/1851164/pexels-photo-1851164.jpeg
+        pickupAddress:
+          type: string
+          example: 'Splott Road, Cardiff'
+        specialNotes:
+          type: string
+          example: 'Afraid of bicycles, loves puddles'
+        createdAt:
+          type: string
+          format: date-time
+          example: '2024-01-12T13:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2024-01-12T15:30:00Z'
+
+    PublicWalk:
+      type: object
+      properties:
+        id:
+          type: string
+          example: '1'
+        dogName:
+          type: string
+          example: Max
+        date:
+          type: string
+          format: date
+          example: '2024-01-12'
+        duration:
+          type: integer
+          example: 60
+        route:
+          type: string
+          example: Splott Park Loop
+        weather:
+          type: string
+          example: sunny
+        notes:
+          type: string
+          example: Max had a wonderful time today!
+        photos:
+          type: array
+          items:
+            type: string
+            format: uri
+          example:
+            - https://images.pexels.com/photos/1108099/pexels-photo-1108099.jpeg
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          example: '1'
+        userId:
+          type: string
+          example: '1'
+        type:
+          type: string
+          enum: [info, success, warning, error]
+          example: success
+        title:
+          type: string
+          example: Walk Completed
+        message:
+          type: string
+          example: Max's walk has been completed. Check out the photos!
+        timestamp:
+          type: string
+          format: date-time
+          example: '2024-01-12T15:30:00Z'
+        read:
+          type: boolean
+          example: false
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Error message describing what went wrong
+        message:
+          type: string
+          example: Additional error details (development mode only)

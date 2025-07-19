@@ -14,7 +14,10 @@
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:dev": "docker-compose -f docker-compose.dev.yml up -d",
-    "docker:logs": "docker-compose logs -f"
+    "docker:logs": "docker-compose logs -f",
+    "api:docs": "open api-docs.html",
+    "api:validate": "swagger-codegen validate -i openapi.yaml",
+    "api:generate": "./generate-clients.sh"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",

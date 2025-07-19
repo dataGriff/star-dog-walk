@@ -3,6 +3,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
@@ -11,6 +13,9 @@ import walkRoutes from './routes/walks.js';
 import notificationRoutes from './routes/notifications.js';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -42,6 +47,16 @@ app.use('/api/notifications', notificationRoutes);
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Serve OpenAPI documentation
+app.get('/api/docs', (req, res) => {
+  res.sendFile(path.join(__dirname, '../openapi.yaml'));
+});
+
+// API documentation page
+app.get('/docs', (req, res) => {
+  res.sendFile(path.join(__dirname, '../api-docs.html'));
 });
 
 // Error handling middleware
