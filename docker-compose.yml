@@ -1,0 +1,39 @@
+services:
+  # Backend service
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: star-dog-walk-backend
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - FRONTEND_URL=http://localhost:3000
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+    ports:
+      - "3001:3001"
+    networks:
+      - star-dog-walk-network
+    restart: unless-stopped
+
+  # Frontend service
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: star-dog-walk-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - star-dog-walk-network
+    restart: unless-stopped
+
+networks:
+  star-dog-walk-network:
+    driver: bridge
+
+volumes:
+  # You can add persistent volumes here if needed for future database integration
+  star-dog-walk-data:
