@@ -1,6 +1,6 @@
-const express = require('express');
-const { notifications, generateId, getCurrentTimestamp } = require('../data/mockData');
-const { authenticateToken } = require('../middleware/auth');
+import express from 'express';
+import { notifications, generateId, getCurrentTimestamp } from '../data/mockData.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -78,4 +78,4 @@ router.delete('/', authenticateToken, (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

@@ -1,6 +1,6 @@
-const express = require('express');
-const { users } = require('../data/mockData');
-const { authenticateToken } = require('../middleware/auth');
+import express from 'express';
+import { users } from '../data/mockData.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -45,4 +45,4 @@ router.put('/profile', authenticateToken, (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

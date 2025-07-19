@@ -1,5 +1,5 @@
-const jwt = require('jsonwebtoken');
-const { users } = require('../data/mockData');
+import jwt from 'jsonwebtoken';
+import { users } from '../data/mockData.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
@@ -43,7 +43,7 @@ const requireRole = (role) => {
   };
 };
 
-module.exports = {
+export {
   authenticateToken,
   requireRole,
   JWT_SECRET

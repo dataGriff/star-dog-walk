@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
@@ -87,10 +86,9 @@ const DogsListPage: React.FC = () => {
 
         {/* Dogs Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {dogs.map((dog) => (
-            {dogs.map((dog) => {
-              const { totalWalks, lastWalk } = getWalkStats(dog.id);
-              return (
+          {dogs.map((dog) => {
+            const { totalWalks, lastWalk } = getWalkStats(dog.id);
+            return (
             <div key={dog.id} className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow group">
               <div className="relative">
                 <img
@@ -161,9 +159,8 @@ const DogsListPage: React.FC = () => {
                 </div>
               </div>
             </div>
-              );
-            })}
-          ))}
+            );
+          })}
 
           {/* Add New Dog Card (for owners only) */}
           {!isWalker && (

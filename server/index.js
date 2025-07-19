@@ -1,22 +1,31 @@
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-require('dotenv').config();
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import dotenv from 'dotenv';
 
-const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/users');
-const dogRoutes = require('./routes/dogs');
-const walkRoutes = require('./routes/walks');
-const notificationRoutes = require('./routes/notifications');
+import authRoutes from './routes/auth.js';
+import userRoutes from './routes/users.js';
+import dogRoutes from './routes/dogs.js';
+import walkRoutes from './routes/walks.js';
+import notificationRoutes from './routes/notifications.js';
+
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(helmet());
+
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: allowedOrigins,
   credentials: true
 }));
 app.use(morgan('combined'));
@@ -45,7 +54,7 @@ app.use((err, req, res, next) => {
 });
 
 // 404 handler
-app.use('*', (req, res) => {
+app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 

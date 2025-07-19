@@ -1,6 +1,6 @@
-const express = require('express');
-const { dogs, generateId, getCurrentTimestamp } = require('../data/mockData');
-const { authenticateToken } = require('../middleware/auth');
+import express from 'express';
+import { dogs, generateId, getCurrentTimestamp } from '../data/mockData.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -161,4 +161,4 @@ router.delete('/:id', authenticateToken, (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

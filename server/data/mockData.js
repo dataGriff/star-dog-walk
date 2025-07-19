@@ -1,6 +1,6 @@
 // Mock database - in production this would be replaced with a real database
-const bcrypt = require('bcryptjs');
-const { v4: uuidv4 } = require('uuid');
+import bcrypt from 'bcryptjs';
+import { v4 as uuidv4 } from 'uuid';
 
 // Users data
 const users = [
@@ -203,12 +203,21 @@ users.push({
   createdAt: '2024-01-03T00:00:00Z'
 });
 
-module.exports = {
+export {
   users,
   dogs,
   walks,
   notifications,
   // Helper functions to simulate database operations
-  generateId: () => uuidv4(),
-  getCurrentTimestamp: () => new Date().toISOString()
+  generateId,
+  getCurrentTimestamp
 };
+
+// Helper functions
+function generateId() {
+  return uuidv4();
+}
+
+function getCurrentTimestamp() {
+  return new Date().toISOString();
+}
