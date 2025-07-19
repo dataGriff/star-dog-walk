@@ -221,10 +221,12 @@ const OwnerDashboard: React.FC = () => {
 
         {selectedTab === 'upcoming' && (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {upcomingWalks.map((walk) => (
+            {upcomingWalks.map((walk) => {
+              const dog = dogs.find(d => d.id === walk.dogId);
+              return (
               <div key={walk.id} className="bg-white rounded-2xl shadow-sm p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="font-semibold text-slate-900">{walk.dog}</h4>
+                  <h4 className="font-semibold text-slate-900">{dog?.name || 'Unknown Dog'}</h4>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                     walk.status === 'confirmed' 
                       ? 'bg-emerald-100 text-emerald-800'
@@ -233,21 +235,24 @@ const OwnerDashboard: React.FC = () => {
                     {walk.status}
                   </span>
                 </div>
-                <p className="text-slate-600 mb-2">{walk.date} at {walk.time}</p>
+                <p className="text-slate-600 mb-2">{walk.date} at {walk.startTime}</p>
                 <p className="text-sm text-slate-500">{walk.duration} minutes</p>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
         {selectedTab === 'history' && (
           <div className="space-y-4">
-            {recentWalks.map((walk) => (
+            {recentWalks.map((walk) => {
+              const dog = dogs.find(d => d.id === walk.dogId);
+              return (
               <div key={walk.id} className="bg-white rounded-2xl shadow-sm p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="font-semibold text-slate-900">{walk.dog} - {walk.route}</h4>
-                    <p className="text-slate-600">{walk.date} • {walk.photos} photos</p>
+                    <h4 className="font-semibold text-slate-900">{dog?.name || 'Unknown Dog'} - {walk.route || 'Walk completed'}</h4>
+                    <p className="text-slate-600">{walk.date} • {walk.photos?.length || 0} photos</p>
                   </div>
                   <Link
                     to={`/walk-journal/${walk.id}`}
@@ -257,7 +262,8 @@ const OwnerDashboard: React.FC = () => {
                   </Link>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
