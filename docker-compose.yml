@@ -4,11 +4,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
+      args:
+        - FRONTEND_URL
     container_name: star-dog-walk-backend
     environment:
       - NODE_ENV=production
       - PORT=3001
-      - FRONTEND_URL=http://localhost:3000
       - JWT_SECRET=your-super-secret-jwt-key-change-in-production
     ports:
       - "3001:3001"
